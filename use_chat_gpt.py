@@ -12,7 +12,7 @@ def ask_to_chat_gpt(jokbo, question):
     response = client.chat.completions.create(
         model=GPT_MODEL,
         messages=[
-            {"role": "system", "content": "너는 시험을 보는 학생이야"},
+            {"role": "system", "content": "너는 안전보건 전문가야"},
             {"role": "user", "content": jokbo + '\n' + question}
         ]
     )
