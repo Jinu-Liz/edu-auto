@@ -169,6 +169,7 @@ if __name__ == '__main__':
 
                     if "btn_last_page" in btn_cls_nm:
                         try:
+                            time.sleep(20)
                             driver.find_element(By.XPATH, "/html/body/div[3]/div[3]/div/button[1]").click()
                         except:
                             driver.close()
@@ -181,6 +182,9 @@ if __name__ == '__main__':
 
                 # 회차 끝
                 driver.switch_to.window(driver.window_handles[0])
+
+                test_td.find_element(By.TAG_NAME, "span").find_element(By.TAG_NAME, "a").click()
+                wait()
 
                 do_test(driver, current_jokbo)
 
