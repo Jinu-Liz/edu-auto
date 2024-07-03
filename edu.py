@@ -89,7 +89,7 @@ if __name__ == '__main__':
         driver.get("https://www.allteaching.biz/lms/class/student/")
         wait()
 
-        driver.get("https://www.allteaching.biz/lms/class/set_session.php?ps_id=2608cfdf30839b2cd3ebc60fe65ea6ee@kwto@2024&url=%2Flms%2Fclass%2Fstudent%2Fpage.php%3Fp%3Dcl_lecture")
+        driver.get("https://www.allteaching.biz/lms/class/set_session.php?ps_id=4392b372f7ccf0f844c6bd6c6249e463@kwtp@2024&url=%2Flms%2Fclass%2Fstudent%2Fpage.php%3Fp%3Dcl_lecture")
         wait()
 
         lecture_table = driver.find_element(By.XPATH, "/html/body/div/div[3]/div[2]/div[1]/div[3]/div/table").find_element(By.TAG_NAME, "tbody")
@@ -127,6 +127,14 @@ if __name__ == '__main__':
 
                     td_idx = td_idx + 1
                     continue
+
+                try:
+                    before_video_btn = driver.find_element(By.XPATH, "/html/body/div[1]/div[3]/div/button")
+                    if before_video_btn.text == '사전영상 보기':
+                        before_video_btn.click()
+                        time.sleep(120)
+                except:
+                    pass
 
                 try:
                     driver.find_element(By.ID, "agree_chk_safety").click()
