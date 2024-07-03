@@ -3,7 +3,7 @@ import tiktoken
 from openai import OpenAI
 
 PDF_PATH = "./[교안]하반기_정기안전보건교육.pdf"
-GPT_MODEL = "gpt-3.5-turbo-16k"
+GPT_MODEL = "gpt-4-turbo"
 API_KEY = "{OPENAI_API_KEY}"
 client = OpenAI(api_key=API_KEY)
 
@@ -44,7 +44,7 @@ def get_jokbo_dic():
                 part_num = part_num + 1
                 continue
 
-            lecture_text = lecture_text + cur_text
+            lecture_text = lecture_text + '\n' + cur_text
 
     lec_dic[part_num] = lecture_text
 
@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     print(len(token_list))
 
-    # question = """다음은 어떤 보험급여에 대한 설명인가? [업무상 사유로 부상, 질병으로 치유 후 장해가 있는 경우 지급되고, 신체에 정신적, 육체적 장해가 남아 장해급여 지급대상이 된다. 지급일수에 평균임금 곱하여 지급되고, 등급은 제1급~제14급까지 있다.] [ 25 점 ] 1 휴업급여 2 요양급여 3 장해급여 4 간병급여"""
-    # question = question + "\n번호로만 대답해"
-    # print(ask_to_chat_gpt(whole_text, question))
+    question = """심폐소생술에 대한 설명으로 아닌 것은? [ 25 점 ] 1 분당 100~120회의 속도로 가슴을 압박한다. 2 다른 사람에게 양도한다. 3 가슴 압박 중단은 최소화하며 5주기마다 압박자를 교체한다. 4 5~6cm 깊이로 가슴을 압박한다."""
+    question = question + "\n번호로만 대답해"
+    print(ask_to_chat_gpt(whole_text, question))
 
