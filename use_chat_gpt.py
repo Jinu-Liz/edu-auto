@@ -7,7 +7,7 @@ from openai import OpenAI
 
 load_dotenv()
 
-PDF_PATH = "./jokbo/" + os.environ.get("JOKBO_FILE")
+PDF_PATH = "./jokbo/" + os.environ.get("JOKBO_FILE") + ".pdf"
 GPT_MODEL = "gpt-4-turbo"
 API_KEY = os.environ.get("API_KEY")
 client = OpenAI(api_key=API_KEY)
