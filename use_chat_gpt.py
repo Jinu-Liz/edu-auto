@@ -1,10 +1,15 @@
 import fitz
 import tiktoken
+import os
+
+from dotenv import load_dotenv
 from openai import OpenAI
 
-PDF_PATH = "./[교안]하반기_정기안전보건교육.pdf"
+load_dotenv()
+
+PDF_PATH = "./jokbo/" + os.environ.get("JOKBO_FILE")
 GPT_MODEL = "gpt-4-turbo"
-API_KEY = "{OPENAI_API_KEY}"
+API_KEY = os.environ.get("API_KEY")
 client = OpenAI(api_key=API_KEY)
 
 

@@ -1,20 +1,35 @@
 import time
 import use_chat_gpt as gpt
+import os
+import re
 
+
+from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from datetime import datetime
+from datetime import date
 
-ID = "{아이디}"
-PASSWORD = "{비밀번호}"
+load_dotenv()
+
+ID = os.environ.get("ID")
+PASSWORD = os.environ.get("PASSWORD")
 JOKBO_DIC = gpt.get_jokbo_dic()
+
+
+def get_date_by_pattern(str):
+    pattern = r'\b\d{4}-\d{2}-\d{2}\b'
+    matches = re.findall(pattern, str)
+
+    return datetime.strptime(matches[0], '%Y-%m-%d').date()
 
 
 def wait():
     time.sleep(2)
 
 
+# 시험보기
 def do_test(browser, jokbo):
-    wait()
     browser.find_element(By.ID, "exam_agree_check").click()
     browser.find_element(By.XPATH, '/html/body/div/div/div/div/span[2]/input').click()
 
@@ -40,7 +55,6 @@ def do_test(browser, jokbo):
 
         choice_list[gpt_answer - 1].click()
 
-    # / html / body / div / div[2] / div[1] / div[3] / a
     browser.find_element(By.XPATH, '/html/body/div/div[2]/div[1]/div[3]/a/span').click()
     wait()
 
@@ -51,6 +65,7 @@ def do_test(browser, jokbo):
     wait()
 
 
+# 로그인
 def login_site(browser):
     browser.get("https://www.allteaching.biz/member/login.php")
     wait()
@@ -83,6 +98,50 @@ def login_site(browser):
         pass
 
 
+# 강의현황으로 이동
+def move_to_my_lecture(browser):
+    browser.get("https://www.allteaching.biz/lms/class/student/")
+    wait()
+
+
+# 미수료 강의 시작
+def start_my_lecture(browser):
+    finished = False
+
+    lecture_table = browser.find_element(By.CLASS_NAME, 'statusWrap').find_element(By.TAG_NAME, 'table')
+    lecture_list = lecture_table.find_elements(By.TAG_NAME, 'tr')
+    lecture_count = len(lecture_list)
+    for i in range(1, lecture_count):
+        td_list = lecture_list[i].find_elements(By.TAG_NAME, 'td')
+
+        duration = td_list[2]
+        is_status_progressing = "진행중" in td_list[3].text
+        is_finished = "미수료" == td_list[8].text
+
+        if is_in_progress(duration) and is_status_progressing and is_finished:
+            td_list[9].find_element(By.TAG_NAME, 'a').click()
+
+            while finished is False:
+                finished = do_process(browser)
+
+            move_to_my_lecture(driver)
+            return False
+
+    return True
+
+
+# 강의시험 클릭
+def click_lecture_test(browser, lecture_number):
+    (browser.find_element(By.XPATH, "/html/body/div/div[3]/div[2]/div[1]/div[3]/div/table")
+     .find_element(By.TAG_NAME, "tbody")
+     .find_elements(By.TAG_NAME, "tr")[lecture_number - 1]
+     .find_elements(By.TAG_NAME, "td")[11]
+     .find_element(By.TAG_NAME, "span")
+     .find_element(By.TAG_NAME, "a").click())
+    wait()
+
+
+# 강의 듣기 - 시험 - 평가를 포함한 모든 과정
 def do_process(browser):
     lecture_table = browser.find_element(By.XPATH, "/html/body/div/div[3]/div[2]/div[1]/div[3]/div/table").find_element(
         By.TAG_NAME, "tbody")
@@ -105,11 +164,10 @@ def do_process(browser):
                 continue
 
             else:
-                test_td.find_element(By.TAG_NAME, "span").find_element(By.TAG_NAME, "a").click()
-                wait()
-
+                click_lecture_test(browser, lecture_number)
+                evaluation_lecture(browser)
                 do_test(browser, current_jokbo)
-                break
+                return False
         else:
             try:
                 listen_td.find_element(By.TAG_NAME, "span").find_element(By.TAG_NAME, "a").click()
@@ -175,11 +233,53 @@ def do_process(browser):
                     current_page = current_page + 1
 
             # 회차 끝
-            test_td.find_element(By.TAG_NAME, "span").find_element(By.TAG_NAME, "a").click()
+            click_lecture_test(browser, lecture_number)
+            evaluation_lecture(browser)
+            do_test(browser, current_jokbo)
+            return False
+
+    return True
+
+
+# 강의 평가
+def evaluation_lecture(browser):
+    try:
+        if "강의평가설문을 작성해주세요" in browser.switch_to.alert.text:
+            browser.switch_to.alert.accept()
             wait()
 
-            do_test(browser, current_jokbo)
-            break
+            table = browser.find_element(By.NAME, 'fwrite').find_element(By.TAG_NAME, 'table')
+            survey_div = table.find_elements(By.CLASS_NAME, 'evaluation_radio_b')
+            survey_text = table.find_elements(By.TAG_NAME, 'textarea')
+            for survey in survey_div:
+                if "매우그렇다" in survey.find_element(By.TAG_NAME, 'label').text:
+                    survey.find_element(By.TAG_NAME, 'input').click()
+
+            for survey in survey_text:
+                survey.send_keys("-")
+
+            browser.find_element(By.ID, 'btn_submit').click()
+            wait()
+
+            buttons = browser.find_elements(By.TAG_NAME, 'button')
+            for button in buttons:
+                if "시험응시" in button.text:
+                    button.click()
+
+            wait()
+
+    except:
+        return
+
+
+def is_in_progress(duration):
+    span_list = duration.find_elements(By.TAG_NAME, 'span')
+    start_date = get_date_by_pattern(span_list[0].text)
+    end_date = get_date_by_pattern(span_list[1].text)
+
+    today = date.today()
+
+    return start_date <= today <= end_date
 
 
 if __name__ == '__main__':
@@ -190,20 +290,12 @@ if __name__ == '__main__':
 
     try:
         # 강의로 이동
-        driver.get("https://www.allteaching.biz/lms/class/student/")
-        wait()
-
-        driver.get("https://www.allteaching.biz/lms/class/set_session.php?ps_id=4392b372f7ccf0f844c6bd6c6249e463@kwtp@2024&url=%2Flms%2Fclass%2Fstudent%2Fpage.php%3Fp%3Dcl_lecture")
-        wait()
-
-        lecture_table = driver.find_element(By.XPATH,
-                                             "/html/body/div/div[3]/div[2]/div[1]/div[3]/div/table").find_element(
-            By.TAG_NAME, "tbody")
-        tr_list_size = len(lecture_table.find_elements(By.TAG_NAME, "tr"))
-
-        for i in range(tr_list_size):
-            do_process(driver)
+        move_to_my_lecture(driver)
+        finish = False
+        while finish is False:
+            finish = start_my_lecture(driver)
 
     except Exception as e:
         print(e)
         driver.close()
+        os.system('taskkill /f /im chromedriver.exe')
